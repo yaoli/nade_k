@@ -35,9 +35,14 @@ Reproducing the Results
 <code>'n_layers': 1,</code> and <code>'l2': 0.0</code>.
 3. To run NADE-5 2HL in Table 1 of the paper, make sure   
 <code>'n_layers': 2,</code> and <code>'l2': 0.0012279827881</code>.
+4. To start training, <code>python train_model.py</code>
+
+It is highly recommended the code is run on GPUs. For how to make it happen, take a look at this place: http://deeplearning.net/software/theano/tutorial/using_gpu.html.
+
+#### Training outputs
+During the training, lots of information is printed out on the screen, and many files are written to the <code>save_mode_path</code>. You will be able to see the plot of drop of the training cost, the generated samples from the model, the log-likelihood on the validset and testset every <code>valid_freq</code> epochs.
 
 #### Evaluation
-
 1h model: 
 testset LL over 10 orderings = -89.43
 testset LL over 128 ensembles = 
