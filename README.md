@@ -48,6 +48,8 @@ In addition, we have provided some training logs with which you should be able t
 
 #### Evaluation
 After training is done, it is time to get all those SOTA numbers in Table 1 of the paper. 
+
+
 1. In <code>config.py</code>, change the option <code>'action'</code> to 1. Meanwhile make sure <code>'from_path'</code> points to the *directory* that contains <code>model_params_e*.pkl</code> and <code>model_configs.pkl</code>. The option <code>'epoch'</code> specify which model over there you would like to use.  
 2. Then <code>python train_model.py</code>  
 3. If all goes well, the evaluation script should be able to produce numbers that match those in the paper.  
