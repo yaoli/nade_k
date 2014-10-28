@@ -68,7 +68,7 @@ testset LL over 10 orderings = -89.43
 testset LL over 128 ensembles = 
 
 2h model:
-testset LL over 10 orderings = -87.13
+testset LL over 10 orderings = -87.13  
 testset LL over 128 ensembles =   
 
 #### Contact
