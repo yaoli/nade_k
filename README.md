@@ -65,7 +65,6 @@ After training is done, it is time to get all those SOTA numbers in Table 1 of t
 
 #### Benchmarks with this package
 
-Here are the benchmarks from this package.   
 NADE-5 1H model:   
 testset LL over 10 orderings = -89.43  
 testset LL over 128 ensembles = 
