@@ -54,7 +54,7 @@ After training is done, it is time to get all those SOTA numbers in Table 1 of t
 2. Then <code>python train_model.py</code>  
 3. If all goes well, the evaluation script should be able to produce numbers that match those in the paper.  
 
-**You probably will be surprised when you see better numbers than those reported in our paper. Calm down and we know this could happen. The longer you train our model, the more likely you will get better numbers. And do spread your joy to us when this happens.**
+**IMPORTANT: You probably will be surprised when you see better numbers than those reported in our paper. Calm down and we know this could happen. The longer you train our model, the more likely you will get better numbers. And do spread your joy to us when this happens.**
  
 1h model: 
 testset LL over 10 orderings = -89.43
