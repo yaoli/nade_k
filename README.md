@@ -25,6 +25,7 @@ You can download the dataset from the links below.
 [validset](http://www.cs.toronto.edu/~larocheh/public/datasets/binarized_mnist/binarized_mnist_valid.amat)  
 [testset](http://www.cs.toronto.edu/~larocheh/public/datasets/binarized_mnist/binarized_mnist_test.amat)
 
+After the dataset has been downloaded, make sure to change the <code>data_path</code> in <code>utils.py</code>.   
 Reproducing the Results 
 ---------------------
 #### Train the model
