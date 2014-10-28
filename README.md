@@ -1,8 +1,7 @@
 This package contains the accompany code for the following paper:
+
 Tapani Raiko, Li Yao, KyungHyun Cho, Yoshua Bengio
-
 [Iterative Neural Autoregressive Distribution Estimator (NADE-k)](http://arxiv.org/abs/1406.1485). 
-
 Advances in Neural Information Processing Systems 2014 (NIPS14).
 
 Setup
