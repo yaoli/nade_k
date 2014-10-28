@@ -62,12 +62,13 @@ After training is done, it is time to get all those SOTA numbers in Table 1 of t
 3. If all goes well, the evaluation script should be able to produce numbers that match those in the paper.  
 
 **IMPORTANT: You probably will be surprised when you see better numbers than those reported in our paper. Calm down and we know this could happen. The longer you train our model, the more likely you will get better numbers. And do spread your joy to us when this happens.**
- 
-1h model: 
+
+Here are the benchmarks from this package.   
+NADE-5 1H model:   
 testset LL over 10 orderings = -89.43  
 testset LL over 128 ensembles = 
 
-2h model:
+NADE-5 2H model:  
 testset LL over 10 orderings = -87.13  
 testset LL over 128 ensembles =   
 
