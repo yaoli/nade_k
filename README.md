@@ -76,4 +76,6 @@ testset LL over 128 ensembles =
 
 #### Contact
 
-Questions? Contact us: li.yao@umontreal.ca
+Questions?   
+Need a trained model?   
+Contact us: li.yao@umontreal.ca
