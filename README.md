@@ -13,7 +13,13 @@ information you need can be found by following this link:
 http://deeplearning.net/software/theano/
 
 #### Prepare the MNIST dataset
-blablalba
+You can download the dataset from the links below.
+[trainset]
+(http://www.cs.toronto.edu/~larocheh/public/datasets/binarized_mnist/binarized_mnist_train.amat)
+
+[validset](http://www.cs.toronto.edu/~larocheh/public/datasets/binarized_mnist/binarized_mnist_valid.amat)
+
+[testset](http://www.cs.toronto.edu/~larocheh/public/datasets/binarized_mnist/binarized_mnist_test.amat)
 
 Reproducing the Results 
 ---------------------
