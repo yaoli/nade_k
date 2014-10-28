@@ -63,6 +63,8 @@ After training is done, it is time to get all those SOTA numbers in Table 1 of t
 
 **IMPORTANT: You probably will be surprised when you see better numbers than those reported in our paper. Calm down and we know this could happen. The longer you train our model, the more likely you will get better numbers. And do spread your joy to us when this happens.**
 
+#### Benchmarks with this package
+
 Here are the benchmarks from this package.   
 NADE-5 1H model:   
 testset LL over 10 orderings = -89.43  
