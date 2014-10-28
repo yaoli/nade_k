@@ -1,18 +1,20 @@
 # -*- coding: utf-8 -*-
 from jobman import DD
 import utils
-exp_path = './exps/'
+exp_path = '/data/lisatmp3/yaoli/exp/nade_k_nips14_release/'
+#exp_path = './exps/'
+best_1h_model = exp_path + 'reproduce_h500_k5_oldcode_pretrain_finetune/'
+best_2h_model = exp_path + 'reproduce_h500_h500_k5_oldcode_pretrain_finetune/'
 config = DD({
     'model': 'DeepOrderlessNADE',
     'load_trained': DD({
         # action: 0 standard train, 1 load trained model and evaluate, 2 continue training
-        'action': 0,
-        'from_path': exp_path+ 'nade_k/test/',
-        'epoch': 975, 
+        'action': 1,
+        'from_path': best_2h_model,
+        'epoch': 3999, 
         }),
     'random_seed': 1234,
-    #'save_model_path': exp_path + 'nade_k/nade_k_5_noMaskEachStep_untiedWeights_initMean_costFromAll_continueWithCostFromLast/',
-    'save_model_path': exp_path + '/nade_k_nips14_release/reproduce_h500_k5_oldcode_pretrain_finetune/',
+    'save_model_path': exp_path + '/nade_k_nips14_release_final/test_h2/',
     'dataset': DD({
         'signature': 'MNIST_binary_russ',
         }),
@@ -20,7 +22,7 @@ config = DD({
         'n_in': None,
         'n_out': None,
         'n_hidden': 500,
-        'n_layers': 1,
+        'n_layers': 2,
         'hidden_act': 'tanh',
         'tied_weights': False,
         # only for the first step of mean field
@@ -44,8 +46,9 @@ config = DD({
             'sgd_type': 1,
             'momentum': 0.9,
             'lr': 0.001,
-            # 0.00122798257881 for 2h model
-            'l2': 0.0,
+            # 0.0012279827881 for 2h model
+            # 0.0 for 1h model
+            'l2': 0.0012279827881,
             # number of mean field steps
             'k': 5,
             'verbose': True,

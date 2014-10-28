@@ -1,4 +1,4 @@
-import sys, os
+import sys, os, time
 import theano
 import theano.tensor as T
 from collections import OrderedDict
@@ -49,7 +49,7 @@ class DeepOrderlessBernoulliNADE(object):
         self.LL_valid_test = []
 
         # for dataset
-        self.trainset,_, self.validset, _ self.testset, _ = utils.load_mnist()
+        self.trainset,_, self.validset, _, self.testset, _ = utils.load_mnist()
         self.marginal = numpy.mean(numpy.concatenate(
             [self.trainset, self.validset],axis=0),axis=0)
 
@@ -370,189 +370,6 @@ class DeepOrderlessBernoulliNADE(object):
             updates=updates, name='nade_k_sampling_fn'
         )
         return f
-    '''
-    ---------------------------------------------------------------------------------------
-    '''    
-    def build_theano_fn_deep_nade_1(self):
-        print 'Build theano functions...'
-        # build cost for deep nade
-        self.learning_rate = theano.shared(numpy.float32(self.lr))
-        self.x = T.fmatrix('inputs')
-        self.x.tag.test_value = numpy.random.binomial(n=1,p=0.5,
-            size=(self.minibatch_size,self.n_visible)).astype(floatX)
-        self.m = T.fmatrix('masks')
-        self.m.tag.test_value = numpy.random.binomial(n=1,p=0.5,
-            size=(self.minibatch_size,self.n_visible)).astype(floatX)
-        # params of first layer
-        self.W1 = utils.build_weights(
-            n_row=self.n_visible, n_col=self.n_hidden, style=1,
-            name='W1',rng_numpy=self.rng_numpy)
-        self.Wflags = utils.build_weights(
-            n_row=self.n_visible, n_col=self.n_hidden, style=1,
-            name='Wflags',rng_numpy=self.rng_numpy) 
-        self.b1 = utils.build_bias(size=self.n_hidden, name='b_1')
-        # params of the last layer
-        self.V = utils.build_weights(
-            n_row=self.n_visible, n_col=self.n_hidden, style=1,
-            name='V',rng_numpy=self.rng_numpy)
-        self.c = utils.build_bias(size=self.n_visible, name='c')
-        # params of middle layers
-        self.Ws = utils.build_weights(
-            n_row=self.n_hidden, n_col=self.n_hidden, style=0,
-            name='Ws',rng_numpy=self.rng_numpy,
-            size=(self.n_layers,self.n_hidden, self.n_hidden))
-        self.bs = utils.build_bias(size=(self.n_layers,self.n_hidden), name='bs')
-        self.params = [self.W1, self.Wflags, self.b1, self.V, self.c, self.Ws, self.bs] 
-
-        self.cost = self.get_deep_nade_1_cost_theano(self.x, self.m)
-        
-        L2_cost = T.sum(self.W1**2) + T.sum(self.V**2) + \
-          T.sum(self.Ws**2) + T.sum(self.Wflags**2)
-        self.reg_cost = self.cost + self.l2 * L2_cost 
-        # get gradients
-        updates = OrderedDict()
-        consider_constant = None
-        gparams = T.grad(self.reg_cost, self.params, consider_constant)
-        # build momentum
-        gparams_mom = []
-        for param in self.params:
-            gparam_mom = theano.shared(
-                numpy.zeros(param.get_value(borrow=True).shape,
-                dtype=floatX))
-            gparams_mom.append(gparam_mom)
-                    
-        for gparam, gparam_mom, param in zip(gparams, gparams_mom, self.params):
-            inc = self.momentum * gparam_mom - self.lr * gparam
-            updates[gparam_mom] = inc
-            updates[param] = param + inc
-
-        # compile training functions
-        print 'compiling fns ...'
-        self.train_fn = theano.function(
-            inputs=(self.x, self.m),
-            outputs=self.reg_cost,
-            updates=updates,
-            name='train_fn'
-        )
-        # for batch gradient descent
-        self.compute_gradient_fn = theano.function(
-            inputs=[self.x, self.m],
-            outputs=[self.cost] + map(T.as_tensor_variable, gparams),
-            name='compute_grad_for_bgd_fn'
-            )
-        # for LBFGS
-        self.cost_fn = theano.function(
-            inputs=[self.x, self.m],
-            outputs=self.cost,
-            name='lbfgs_cost_fn'
-            )
-        
-        self.compute_LL_with_ordering_fn = self.get_deep_nade_1_LL_theano()
-        self.sampling_fn = self.get_deep_nade_1_sampling_fn_theano()
-    
-    
-    def get_deep_nade_1_LL_theano(self):
-        # the slow sampling procedure, with a fixed ordering
-        ordering = T.ivector('ordering')
-        ordering.tag.test_value = numpy.arange(self.n_visible).astype('int32')
-        x = T.fmatrix('samples')
-        x.tag.test_value = numpy.random.binomial(n=1,
-                            p=0.5,size=(self.n_visible,10)).astype(floatX)
-        n_h1 = self.W1.get_value().shape[1]
-        a = T.alloc(numpy.float32(0),x.shape[1], n_h1) + self.b1
-        def LL_one_bit(this_bit, a, x, W1, Wflags, Ws, bs, V, c):
-            act_h1 = apply_act(a, self.hidden_act)
-            act = act_h1
-            for i in range(self.n_layers):
-                act = apply_act(T.dot(act,Ws[i]) + bs[0], self.hidden_act)
-            t = T.dot(act, V[this_bit]) + c[this_bit]
-            mean = T.nnet.sigmoid(t)*0.9999 + 0.0001 * 0.5
-            x_i = x[this_bit,:]
-            LL = x_i * T.log(mean) + (1-x_i) * T.log(1-mean)
-            new_a = a + T.dot(x_i.dimshuffle(0,'x'),W1[this_bit].dimshuffle('x',0)) \
-                    + Wflags[this_bit]
-            return LL, new_a
-        
-        [LLs, a], updates = theano.scan(
-            fn=LL_one_bit,
-            outputs_info=[None,a],
-            sequences=ordering,
-            non_sequences=[x,self.W1,self.Wflags,self.Ws,self.bs,self.V,self.c]
-        )
-        LLs = T.sum(LLs,axis=0)
-        fn = theano.function(
-            inputs=[x, ordering],
-            outputs=LLs,
-            updates=updates,
-            name='logdensity_with_a_certain_ordering_fn'
-        )
-        return fn
-    
-    def get_deep_nade_1_cost_theano(self, x, mask):
-        """
-        log p(x_missing | x_observed)
-        x is a matrix of column datapoints (mbxD)
-        D = n_visible, mb = mini batch size
-        """
-        #BxD
-        print 'building cost function ...'
-        output_mask = constantX(1)-mask
-        D = constantX(self.n_visible)
-        #d is the 1-based index of the dimension whose value
-        #to infer (not the size of the context)
-        d = mask.sum(1) 
-        masked_input = x * mask #BxD
-        h = apply_act(T.dot(masked_input, self.W1) \
-                                + T.dot(mask, self.Wflags)
-                                 + self.b1, act=self.hidden_act) #BxH
-        for l in xrange(self.n_layers):
-            #BxH
-            h = apply_act(T.dot(h, self.Ws[l]) +
-                                    self.bs[l], act=self.hidden_act)
-        t = T.dot(h, self.V.T) + self.c #BxD
-        # the output has to be sigmoid, though hiddens acts are flexible
-        # BxD        
-        p_x_is_one = T.nnet.sigmoid(t) * constantX(0.9999) + \
-          constantX(0.0001 * 0.5)
-        lp = ((x*T.log(p_x_is_one) +
-               (constantX(1)-x)*T.log(constantX(1)-p_x_is_one)) \
-               * output_mask).sum(1) * D / (D-d) #B
-
-        cost = T.mean(utils.constantX(-1) * lp)
-        return cost
-
-    
-    
-    def get_deep_nade_1_sampling_fn_theano(self):        
-        # give one sample
-        ordering = T.ivector('ordering')
-        ordering.tag.test_value = range(self.W1.get_value().shape[0])
-        a = T.alloc(numpy.float32(0)) + self.b1
-        def sample_one_bit(this_bit, a,
-                           W1,Wflags,
-                           Ws,bs,V,c):
-            act = apply_act(a, self.hidden_act)
-            for i in range(self.n_layers):
-                act = apply_act(T.dot(act,Ws[0]) + bs[0], self.hidden_act)
-            preact = T.dot(act,V[this_bit]) + c[this_bit]
-            mean = T.nnet.sigmoid(preact)*0.9999 + 0.0001 * 0.5
-            bit = self.rng_theano.binomial(p=mean,n=1,size=mean.shape,dtype=floatX)
-            new_a = a + bit * W1[this_bit] + Wflags[this_bit]
-            return bit, new_a
-        [samples, a], updates = theano.scan(
-            fn=sample_one_bit,
-            outputs_info=[None, a],
-            sequences=ordering,
-            non_sequences=[self.W1,self.Wflags,self.Ws,self.bs,self.V,self.c]
-            
-        )
-        samples = samples[T.argsort(ordering)]
-        f = theano.function(
-            inputs=[ordering],
-            outputs=samples,
-            updates=updates, name='slow_sampling_fn'
-        )
-        return f
 
     def get_nade_k_mean_field(self, x, input_mask, k):
         # this procedure uses mask only at the first step of inference
@@ -592,11 +409,11 @@ class DeepOrderlessBernoulliNADE(object):
             else:
                 print 'inputs not centered'
                 v_ = v
-            h = apply_act(T.dot(v_, self.W1) \
+            h = utils.apply_act(T.dot(v_, self.W1) \
                     + T.dot(mask_as_inputs, self.Wflags)
                     + self.b1, act=self.hidden_act)
             if self.n_layers == 2:
-                h = apply_act(T.dot(h, self.W2)+self.b2,act=self.hidden_act)
+                h = utils.apply_act(T.dot(h, self.W2)+self.b2,act=self.hidden_act)
                 
             p_x_is_one = T.nnet.sigmoid(T.dot(h, self.V.T) + self.c)
             # to stabilize the computation
@@ -623,7 +440,7 @@ class DeepOrderlessBernoulliNADE(object):
         samples = numpy.asarray(samples)
         return samples
             
-    def estimate_log_LL_with_ordering(self, data):
+    def estimate_LL_with_ordering(self, data):
         # for testing compute LL
         ordering = numpy.asarray(range(self.n_visible)).astype('int32')
         batches = data.reshape((10,1000,784))
@@ -643,31 +460,74 @@ class DeepOrderlessBernoulliNADE(object):
         mean_over_orderings = numpy.mean(LLs_all)
         print 'LL ', mean_over_orderings
         return mean_over_orderings
+        
+    def get_nade_k_LL_ensemble_theano_minibatch(self, k, n_orderings):
+        # As a mixture model, Equ (18) in the paper
+        ordering = T.imatrix('ordering')
+        # (O,D)
+        ordering.tag.test_value = numpy.repeat(
+            numpy.arange(self.n_visible)[numpy.newaxis,:],n_orderings, axis=0).astype('int32')
+        # (O,D)
+        input_mask_init = constantX(numpy.zeros((n_orderings,self.n_visible),dtype=floatX))
+        x = T.fmatrix('samples')
+        x.tag.test_value = numpy.random.binomial(n=1,
+                            p=0.5,size=(self.minibatch_size,self.n_visible)).astype(floatX)
+        x_ = x.dimshuffle(0,'x',1)
 
-    def estimate_log_LL_after_train_ensemble(self, k, data, n_orderings):
-        n_orderings = n_orderings
-        LL_after_train_fn = self.get_nade_k_LL_ensemble_theano(k, n_orderings)
-        orderings = [numpy.random.permutation(numpy.arange(self.n_visible))
-                     for i in range(n_orderings)]
-        orderings = numpy.asarray(orderings).astype('int32')
-        lls = []
-        to_save = []
-        for i, d in enumerate(data):
-            if self.verbose:
-                sys.stdout.write('\rComputing LL %d/%d'%(i+1, data.shape[0]))
-                sys.stdout.flush()
-           
-            ll = LL_after_train_fn(d[numpy.newaxis, :], orderings)
-            lls.append(ll)
-            if i % 10 == 0:
-                print 'mean LL so far ',numpy.mean(lls)
-                to_save.append([i, numpy.mean(lls)])
-                numpy.savetxt(self.save_model_path+
-                              'ensembled_test_LL_%d_orderings'%n_orderings, to_save)
-        print 'LL ensemble %.2f'%numpy.mean(lls)
-        
-    def estimate_log_LL_after_train(self, k, data):
-        
+        def compute_LL_one_column(
+                this_bit_vector,   # vector
+                input_mask, # [1,  0, 0 ,1,  0, 0, 1 ] with 1 indicates bits already sampled
+                x,x_,    # testset minibatches
+                W1,Wflags,c
+                ):
+            one = theano.tensor.constant(1, dtype=floatX)
+            #means = self.get_nade_k_mean_field(x_, input_mask.dimshuffle('x',0,1), k)
+            means = self.get_nade_k_mean_field(x_, input_mask, k)
+            # use the mean coming from the last step of mean field
+            # (M,O,D)
+            use_mean = means[-1]
+            # (M,O)
+            use_mean_shape = use_mean.shape
+            use_mean = use_mean.reshape([use_mean_shape[0], use_mean_shape[1]*use_mean_shape[2]])
+
+            idx = use_mean_shape[2] * T.arange(use_mean_shape[1]) + this_bit_vector
+
+            mean_column = use_mean[:,idx] * constantX(0.9999) + constantX(0.0001*0.5)
+
+            #mean_column = use_mean[:,T.arange(use_mean.shape[1]), \
+            #                        this_bit_vector]*constantX(0.9999)+ \
+            #                        constantX(0.0001*0.5)
+            x_column = x_.reshape([x_.shape[0],x_.shape[2]])[:,this_bit_vector]
+
+            # (M,O)
+            LL = x_column*T.log(mean_column) + \
+                   (constantX(1)-x_column)*T.log(constantX(1)-mean_column)
+            # set the new input mask: (O,D)
+            input_mask_shape = input_mask.shape
+            input_mask = input_mask.flatten()
+            idx = input_mask_shape[1] * T.arange(input_mask_shape[0]) + this_bit_vector
+            input_mask = T.set_subtensor(input_mask[idx], one)
+            input_mask = input_mask.reshape(input_mask_shape)
+            #input_mask = T.set_subtensor(input_mask[T.arange(input_mask.shape[0]),
+            #                                        this_bit_vector],one)
+            return LL, input_mask
+        [LLs, input_mask], updates = theano.scan(
+            fn=compute_LL_one_column,
+            outputs_info=[None, input_mask_init],
+            sequences=[ordering.T],
+            non_sequences=[x, x_,self.W1,self.Wflags,self.c],
+        )
+        # LLs: (D,M,O)
+        LL = utils.log_sum_exp_theano(LLs.sum(axis=0),axis=-1) - T.log(ordering.shape[0])
+        LL_orders = LLs.sum(axis=0)
+        f = theano.function(
+            inputs=[x, ordering],
+            outputs=[LL,LL_orders],
+            updates=updates, name='LL_on_one_example_fn'
+        )
+        return f
+    
+    def estimate_LL_after_train(self, k, data):
         LL_after_train_fn = self.get_nade_k_rbm_LL_theano(k)
         #LL_after_train_fn = self.get_nade_k_rbm_LL_theano_k_mixture(k)
         ordering = numpy.asarray(range(self.n_visible)).astype('int32')
@@ -690,7 +550,6 @@ class DeepOrderlessBernoulliNADE(object):
 
         return mean_over_orderings
         
-    
     def inpainting(self,epoch, k):
         def compile_inpainting_fn(k):
             input_mask = self.m
@@ -736,10 +595,7 @@ class DeepOrderlessBernoulliNADE(object):
         
         # set visible bias, critical
         self.c.set_value(-numpy.log((1-self.marginal)/self.marginal).astype(floatX))
-        #trainset = numpy.concatenate([self.trainset, self.validset],axis=0)
         self.simple_train_sgd(self.trainset, epoch=0, epoch_end=self.n_epochs)
-        #self.simple_train_bgd(trainset.value, n_epochs=500)
-        #self.simple_train_lbfgs(trainset.value, maxiter=1)
         
         if self.fine_tune_activate:
             # reset the learning rate
@@ -828,14 +684,45 @@ class DeepOrderlessBernoulliNADE(object):
         plt.plot(costs)
         plt.savefig(self.save_model_path+'costs.png')
 
+    def estimate_LL_ensemble(self, k, data, n_orderings=128):
+        # benchmark 2: as model averaging
+        n_orderings = n_orderings
+        LL_fn = self.get_nade_k_LL_ensemble_theano_minibatch(k, n_orderings)
+        orderings = [numpy.random.permutation(numpy.arange(self.n_visible))
+                     for i in range(n_orderings)]
+        orderings = numpy.asarray(orderings).astype('int32')
+        lls = []
+        to_save = []
+        # the table with (orderings, example)
+        lls_orderings = []
+        #idx = numpy.arange(data.shape[0])
+        #numpy.random.shuffle(idx)
+        #data = data[idx,:]
+        data = data.reshape((400,25,784))
+        to_save = []
+        t0 = time.time()
+        for i, d in enumerate(data):
+            sys.stdout.write('\rComputing LL minibatch %d/%d'%(i+1, data.shape[0]))
+            sys.stdout.flush()
+
+            ll, ll_ = LL_fn(d, orderings)
+            lls.append(ll)
+            if i % 10 == 0:
+                use_time = time.time()-t0
+                avg_ll = numpy.mean(lls)
+                to_save.append([use_time,avg_ll])
+                print 'time %f  mean ll so far %f'%(time.time()-t0,numpy.mean(lls))
+                numpy.savetxt(
+                    self.save_model_path+'MoE_testLL_%d_orderings.txt'
+                    %(n_orderings), numpy.asarray(to_save))
+                
     def LL(self, epoch, save_nothing=False):
         # post_train: indicate whether this is called in trained time or after trained
         
         print 'estimate LL on validset'
-        valid_LL = self.estimate_log_LL_with_ordering(self.validset)
+        valid_LL = self.estimate_LL_with_ordering(self.validset)
         print 'estimate LL on testset'
-        test_LL = self.estimate_log_LL_with_ordering(self.testset)
-        
+        test_LL = self.estimate_LL_with_ordering(self.testset)
         
         if not save_nothing:
             # this function is called during the training, will write disk a file
@@ -884,26 +771,20 @@ class DeepOrderlessBernoulliNADE(object):
                     
 def train_from_scratch(state, data_engine, channel=None):
     model = DeepOrderlessBernoulliNADE(state, data_engine, channel)
-    #model.build_theano_fn_deep_nade_1()
     model.build_theano_fn_nade_k_rbm()
     model.train_valid_test()
 
 def evaluate_trained(state, data_engine, params_file, channel=None):
-    # extra set up for loaded models
-    state.DeepOrderlessNADE.train.k = 5
+    import ipdb; ipdb.set_trace()
     state.DeepOrderlessNADE.train.n_orderings=10
-    state.DeepOrderlessNADE.center_v=False
-    state.DeepOrderlessNADE.cost_from_last=True
     model = DeepOrderlessBernoulliNADE(state, data_engine, channel)
     model.build_theano_fn_nade_k_rbm()
     model.load_params(params_file)
     epoch = state.load_trained.epoch
-    data,_ = model.data_engine.get_dataset(which='test', force=True)
-    #k = state.DeepOrderlessNADE.train.k
-    
-    k=5
-    model.estimate_log_LL_after_train(k, data)
-    #model.estimate_log_LL_after_train_ensemble(k,data,n_orderings=128)
+    data = model.testset
+    k = state.DeepOrderlessNADE.train.k
+    #model.estimate_LL_after_train(k, data)
+    model.estimate_LL_ensemble(k,data,n_orderings=128)
     
 def continue_train(state, data_engine, params_file, channel=None):
     state.DeepOrderlessNADE.cost_from_last = True

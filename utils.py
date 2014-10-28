@@ -4,6 +4,11 @@ import os
 import theano
 import theano.tensor as T
 from theano.sandbox.rng_mrg import MRG_RandomStreams
+import cPickle
+floatX = 'float32'
+# This is where mnist dataset is found
+data_path = '/data/lisatmp3/yaoli/datasets/mnist/sampled_version/'
+
 def build_weights(n_row=None, n_col=None, style=None, name=None,
                   rng_numpy=None, value=None, size=None):
     # build shared theano var for weights
@@ -334,10 +339,9 @@ def shuffle_idx(n, shuffle_seed=1234):
 def load_mnist():
     #binarized_mnist_test.amat  binarized_mnist_train.amat  binarized_mnist_valid.amat
     print 'loading binary MNIST, sampled version'
-    base_path = '/data/lisatmp3/yaoli/datasets/mnist/sampled_version/'
-    train_x = numpy.loadtxt(base_path + 'binarized_mnist_train.amat').astype('float32')
-    valid_x = numpy.loadtxt(base_path + 'binarized_mnist_valid.amat').astype('float32')
-    test_x = numpy.loadtxt(base_path + 'binarized_mnist_test.amat').astype('float32')
+    train_x = numpy.loadtxt(data_path + 'binarized_mnist_train.amat').astype('float32')
+    valid_x = numpy.loadtxt(data_path + 'binarized_mnist_valid.amat').astype('float32')
+    test_x = numpy.loadtxt(data_path + 'binarized_mnist_test.amat').astype('float32')
     train_y = numpy.zeros((train_x.shape[0],)).astype('int32')
     valid_y = numpy.zeros((valid_x.shape[0],)).astype('int32')
     test_y = numpy.zeros((test_x.shape[0],)).astype('int32')
