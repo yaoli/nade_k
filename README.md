@@ -10,11 +10,16 @@ Setup
 
 Download Theano and make sure it's working properly.  All the
 information you need can be found by following this link:
-http://deeplearning.net/software/theano/
+http://deeplearning.net/software/theano/  
+Make sure theano is added into your PYTHONPATH
 
+#### Install Jobman
+Very detailed information can be found below:  
+http://deeplearning.net/software/jobman/install.html.  
+Make sure jobman is added into you PYTHONPATH
+ 
 #### Prepare the MNIST dataset
-You can download the dataset from the links below.
-
+You can download the dataset from the links below.  
 [trainset]
 (http://www.cs.toronto.edu/~larocheh/public/datasets/binarized_mnist/binarized_mnist_train.amat)  
 [validset](http://www.cs.toronto.edu/~larocheh/public/datasets/binarized_mnist/binarized_mnist_valid.amat)  
