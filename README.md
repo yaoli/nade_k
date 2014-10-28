@@ -1,7 +1,7 @@
 This package contains the accompany code for the following paper:
 
-Tapani Raiko, Li Yao, KyungHyun Cho, Yoshua Bengio
-[Iterative Neural Autoregressive Distribution Estimator (NADE-k)](http://arxiv.org/abs/1406.1485). 
+Tapani Raiko, Li Yao, KyungHyun Cho, Yoshua Bengio  
+[Iterative Neural Autoregressive Distribution Estimator (NADE-k)](http://arxiv.org/abs/1406.1485).   
 Advances in Neural Information Processing Systems 2014 (NIPS14).
 
 Setup
@@ -14,11 +14,10 @@ http://deeplearning.net/software/theano/
 
 #### Prepare the MNIST dataset
 You can download the dataset from the links below.
+
 [trainset]
-(http://www.cs.toronto.edu/~larocheh/public/datasets/binarized_mnist/binarized_mnist_train.amat)
-
-[validset](http://www.cs.toronto.edu/~larocheh/public/datasets/binarized_mnist/binarized_mnist_valid.amat)
-
+(http://www.cs.toronto.edu/~larocheh/public/datasets/binarized_mnist/binarized_mnist_train.amat)  
+[validset](http://www.cs.toronto.edu/~larocheh/public/datasets/binarized_mnist/binarized_mnist_valid.amat)  
 [testset](http://www.cs.toronto.edu/~larocheh/public/datasets/binarized_mnist/binarized_mnist_test.amat)
 
 Reproducing the Results 
