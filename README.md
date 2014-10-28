@@ -31,8 +31,10 @@ Reproducing the Results
 ---------------------
 #### Train the model
 1. Change <code>exp_path</code> in <code>config.py</code>. This is the *directory* where all the training outputs are going to be placed. For different experiments, one needs to specify <code>'save_model_path'</code> in the same config file.
-2. To run NADE-5 1HL in Table 1 of the paper, make sure <code>'n_layers': 1,</code> and <code>'l2': 0.0</code>.
-3. To run NADE-5 2HL in Table 1 of the paper, make sure <code>'n_layers': 2,</code> and <code>'l2': 0.0012279827881</code>.
+2. To run NADE-5 1HL in Table 1 of the paper, make sure   
+<code>'n_layers': 1,</code> and <code>'l2': 0.0</code>.
+3. To run NADE-5 2HL in Table 1 of the paper, make sure   
+<code>'n_layers': 2,</code> and <code>'l2': 0.0012279827881</code>.
 
 #### Evaluation
 
