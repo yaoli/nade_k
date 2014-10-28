@@ -9,7 +9,7 @@ config = DD({
     'model': 'DeepOrderlessNADE',
     'load_trained': DD({
         # action: 0 standard train, 1 load trained model and evaluate, 2 continue training
-        'action': 1,
+        'action': 0,
         'from_path': best_2h_model,
         'epoch': 3999, 
         }),
