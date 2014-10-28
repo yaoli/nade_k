@@ -42,7 +42,18 @@ It is highly recommended the code is run on GPUs. For how to make it happen, tak
 #### Training outputs
 During the training, lots of information is printed out on the screen, and many files are written to the <code>save_mode_path</code>. You will be able to see the plot of drop of the training cost, the generated samples from the model, the log-likelihood on the validset and testset every <code>valid_freq</code> epochs.
 
+If you use the default setup, the model will be pretrained for 1000 epochs, and finetuned for another 3000 epochs. To have a good generative model, one need to be patient :)
+
+In addition, we have provided some training logs with which you should be able to match your experiments with. See in the directory <code>results</code>.
+
 #### Evaluation
+After training is done, it is time to get all those SOTA numbers in Table 1 of the paper. 
+1. In <code>config.py</code>, change the option <code>'action'</code> to 1. Meanwhile make sure <code>'from_path'</code> points to the *directory* that contains <code>model_params_e*.pkl</code> and <code>model_configs.pkl</code>. The option <code>'epoch'</code> specify which model over there you would like to use.
+2. Then <code>python train_model.py</code>
+3. If all goes well, the evaluation script should be able to produce numbers that match those in the paper.
+
+*You probably will be surprised when you see better numbers than those reported in our paper. Calm down and we know this could happen. The longer you train our model, the more likely you will get better numbers. And do spread your joy to us when this happens.*
+ 
 1h model: 
 testset LL over 10 orderings = -89.43
 testset LL over 128 ensembles = 
