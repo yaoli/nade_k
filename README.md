@@ -72,7 +72,7 @@ testset LL over 128 ensembles = -85.77
 
 NADE-5 2H model:  
 testset LL over 10 orderings = -87.13  
-testset LL over 128 ensembles =   
+testset LL over 128 ensembles = -84.65   
 
 #### Contact
 
